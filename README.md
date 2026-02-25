@@ -6,6 +6,7 @@
 
 
 
+Full 40+ Pages of details here:  https://github.com/madnguvu/spokedpy/blob/main/docs/TECHNICAL_SPECIFICATION.md
 
 
 ## Summary
@@ -208,5 +209,6 @@ I enjoyed making this.  I hope you can find something interesting to do with it.
 
 Enjoy,
 MattD
+
 
 
