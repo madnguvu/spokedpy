@@ -2,12 +2,6 @@
 <img width="355" height="120" alt="image" src="https://github.com/user-attachments/assets/cf427630-b2c9-4b45-a2ee-be02fbc29772" />
 
 
-------
-Download Zip file.  Extract.  Use Pip for installing dependencies.  From terminal, working directory web_interface --- use cmd:  python app.py  <enter> follow screen for instructions on navigating to interface via web browser, i.e. http://localhost:5002.   Up and running in about 1 minute.  
-------
-
-
-
 <img width="1911" height="966" alt="image" src="https://github.com/user-attachments/assets/d9f3d665-f1b4-4284-b049-53560178dc75" />
 
 
@@ -24,7 +18,7 @@ The system is not a prototype. It is 73,000+ lines of tested, modular, productio
 
 *SpokedPy — Code is data. Data is visual. Visual is executable.*
 
-
+Download Zip file.  Extract.  Use Pip for installing dependencies.  From terminal, working directory web_interface --- use cmd:  python app.py  <enter> follow screen for instructions on navigating to interface via web browser, i.e. http://localhost:5002.   Up and running in about 1 minute.  
 
 # Visual Editor Core
 
@@ -214,4 +208,5 @@ I enjoyed making this.  I hope you can find something interesting to do with it.
 
 Enjoy,
 MattD
+
 
