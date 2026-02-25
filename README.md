@@ -1,3 +1,31 @@
+
+<img width="355" height="120" alt="image" src="https://github.com/user-attachments/assets/cf427630-b2c9-4b45-a2ee-be02fbc29772" />
+
+
+------
+Download Zip file.  Extract.  Use Pip for installing dependencies.  From terminal, working directory web_interface --- use cmd:  python app.py  <enter> follow screen for instructions on navigating to interface via web browser, i.e. http://localhost:5002.   Up and running in about 1 minute.  
+------
+
+
+
+<img width="1911" height="966" alt="image" src="https://github.com/user-attachments/assets/d9f3d665-f1b4-4284-b049-53560178dc75" />
+
+
+
+
+
+## Summary
+
+SpokedPy is a visual programming platform that treats source code as a **translatable, executable, auditable data structure**. Its three-pillar architecture — the UIR for language neutrality, the Session Ledger for event sourcing, and the Node Registry for register-file execution — represents a fundamentally new approach to how developers interact with code.
+
+The system is not a prototype. It is 73,000+ lines of tested, modular, production-oriented software with a clear path to enterprise deployment, academic publication, and commercial viability.
+
+---
+
+*SpokedPy — Code is data. Data is visual. Visual is executable.*
+
+
+
 # Visual Editor Core
 
 The foundational component of the SpokedPy VPyD that enables bidirectional conversion between visual programming models and Python source code.
@@ -186,3 +214,4 @@ I enjoyed making this.  I hope you can find something interesting to do with it.
 
 Enjoy,
 MattD
+
