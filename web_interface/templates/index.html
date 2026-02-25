@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpokedPy - Visual Programming IDE</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/png" href="/static/images/spokedpy-logo.png">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <img src="/static/images/logo.png" alt="SpokedPy" class="logo-image">
+                </div>
+            </div>
+            
+            <div class="header-center header-center-hidden"></div>
+            
+            <div class="header-right">
+                <!-- Generate Nodes Button -->
+                <button id="generate-nodes-btn" class="btn btn-primary" title="Generate nodes from Python libraries">
+                    <i data-lucide="package-plus"></i>
+                    Generate Nodes
+                </button>
+                
+                <!-- AST-Grep Search Button -->
+                <button id="ast-grep-btn" class="btn btn-primary" title="Search and refactor nodes using code patterns">
+                    <i data-lucide="search-code"></i>
+                    Pattern Search
+                </button>
+                
+                
+                <button id="validate-btn" class="btn btn-primary">
+                    <i data-lucide="check-circle"></i>
+                    Validate
+                </button>
+                <button id="clear-btn" class="btn btn-secondary">
+                    <i data-lucide="trash-2"></i>
+                    Clear
+                </button>
+                <button id="zoom-fit-btn" class="btn btn-secondary">
+                    <i data-lucide="maximize"></i>
+                    Fit
+                </button>
+
+                <div class="project-meta">
+                    <input id="project-name" class="project-name" type="text" value="Untitled Flow">
+                    <span id="autosave-indicator" class="autosave-indicator">saved</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Node Palette -->
+            <aside class="node-palette">
+                <div class="palette-header">
+                    <h3>
+                        <i data-lucide="package"></i>
+                        Node Palette
+                    </h3>
+                    <input type="text" id="palette-search" placeholder="Search nodes..." class="search-input">
+                </div>
+                
+                <div class="palette-content">
+                    <!-- Dynamic categories will be populated by JavaScript -->
+                </div>
+            </aside>
+
+            <!-- Canvas Container -->
+            <main class="canvas-container">
+                <div class="canvas-toolbar">
+                    <div class="toolbar-left">
+                        <span class="zoom-info">Zoom: <span id="zoom-level">100%</span></span>
+                        <span class="position-info">Pan: <span id="pan-info">0, 0</span></span>
+                    </div>
+                    
+                    <div class="toolbar-right">
+                        <button id="grid-toggle" class="btn btn-small" title="Toggle Grid">
+                            <i data-lucide="grid-3x3"></i>
+                        </button>
+                        <button id="data-flow-toggle" class="btn btn-small" title="Toggle Data Flow">
+                            <i data-lucide="activity"></i>
+                        </button>
+                        <button id="performance-toggle" class="btn btn-small" title="Toggle Performance">
+                            <i data-lucide="gauge"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="canvas-wrapper">
+                    <svg id="canvas" class="canvas">
+                        <!-- Grid pattern -->
+                        <defs>
+                            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+                            </pattern>
+                        </defs>
+                        
+                        <!-- Grid background -->
+                        <rect width="100%" height="100%" fill="url(#grid)" class="grid-background"/>
+                        
+                        <!-- Canvas content group -->
+                        <g id="canvas-content" transform="translate(0,0) scale(1)">
+                            <!-- Connections layer -->
+                            <g id="connections-layer"></g>
+                            
+                            <!-- Nodes layer -->
+                            <g id="nodes-layer"></g>
+                            
+                            <!-- Selection layer -->
+                            <g id="selection-layer"></g>
+                            
+                            <!-- Connection preview layer -->
+                            <g id="preview-layer"></g>
+                        </g>
+                    </svg>
+                    
+
+                </div>
+            </main>
+
+            <!-- Properties Panel -->
+            <aside class="properties-panel">
+                <div class="panel-header">
+                    <h3>
+                        <i data-lucide="settings"></i>
+                        Properties
+                    </h3>
+                </div>
+                
+                <div class="panel-content">
+                    <div id="no-selection" class="no-selection">
+                        <p>Select a node to view properties</p>
+                    </div>
+                    
+                    <div id="node-properties" class="node-properties" style="display: none;">
+                        <div class="property-group">
+                            <label>Node ID:</label>
+                            <input type="text" id="prop-node-id" readonly>
+                        </div>
+                        
+                        <div class="property-group">
+                            <label>Type:</label>
+                            <input type="text" id="prop-node-type" readonly>
+                        </div>
+                        
+                        <div class="property-group">
+                            <label>Position:</label>
+                            <div class="position-inputs">
+                                <input type="number" id="prop-pos-x" placeholder="X">
+                                <input type="number" id="prop-pos-y" placeholder="Y">
+                            </div>
+                        </div>
+                        
+                        <div class="property-group">
+                            <label>Parameters:</label>
+                            <div id="prop-parameters" class="parameters-list"></div>
+                        </div>
+                        
+                        <div class="property-group">
+                            <label>Inputs:</label>
+                            <div id="prop-inputs" class="ports-list"></div>
+                        </div>
+                        
+                        <div class="property-group">
+                            <label>Outputs:</label>
+                            <div id="prop-outputs" class="ports-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span id="connection-status" class="status-item">
+                    <i data-lucide="wifi"></i>
+                    Connected
+                </span>
+                <span id="node-count" class="status-item">Nodes: 0</span>
+                <span id="connection-count" class="status-item">Connections: 0</span>
+            </div>
+            
+            <div class="status-right">
+                <span id="validation-status" class="status-item">
+                    <i data-lucide="check-circle" class="text-success"></i>
+                    Valid
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Generate Nodes Modal -->
+    <div id="generate-nodes-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="package-plus"></i>
+                    Generate Nodes from Library
+                </h2>
+                <button class="modal-close" id="modal-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Source Type Tabs -->
+                <div class="source-tabs">
+                    <button class="source-tab active" data-source="module">
+                        <i data-lucide="package"></i>
+                        Installed Module
+                    </button>
+                    <button class="source-tab" data-source="file">
+                        <i data-lucide="file-code"></i>
+                        Python File
+                    </button>
+                    <button class="source-tab" data-source="pip">
+                        <i data-lucide="download"></i>
+                        Pip Install
+                    </button>
+                </div>
+                
+                <!-- Module Source Panel -->
+                <div class="source-panel" id="module-panel">
+                    <label for="module-name">Module Name:</label>
+                    <input type="text" id="module-name" placeholder="e.g., json, requests, numpy" class="form-input">
+                    <div class="form-help">Enter the name of an installed Python module</div>
+                    
+                    <div class="installed-packages">
+                        <h4>Common Packages:</h4>
+                        <div class="package-chips">
+                            <button class="package-chip" data-module="json">json</button>
+                            <button class="package-chip" data-module="os">os</button>
+                            <button class="package-chip" data-module="datetime">datetime</button>
+                            <button class="package-chip" data-module="math">math</button>
+                            <button class="package-chip" data-module="re">re</button>
+                            <button class="package-chip" data-module="pathlib">pathlib</button>
+                            <button class="package-chip" data-module="collections">collections</button>
+                            <button class="package-chip" data-module="itertools">itertools</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Source Panel -->
+                <div class="source-panel" id="file-panel" style="display: none;">
+                    <label for="file-path">Python File Path:</label>
+                    <input type="text" id="file-path" placeholder="e.g., C:\Projects\mymodule.py" class="form-input">
+                    <div class="form-help">Enter the full path to a Python file</div>
+                </div>
+                
+                <!-- Pip Install Panel -->
+                <div class="source-panel" id="pip-panel" style="display: none;">
+                    <label for="pip-package">Package to Install:</label>
+                    <input type="text" id="pip-package" placeholder="e.g., requests, flask, pandas" class="form-input">
+                    <div class="form-help">This will run: pip install [package]</div>
+                    <div class="pip-warning">
+                        <i data-lucide="alert-triangle"></i>
+                        Installing packages may affect your Python environment
+                    </div>
+                </div>
+                
+                <!-- Status Area -->
+                <div id="generate-status" class="generate-status" style="display: none;">
+                    <div class="status-message"></div>
+                    <div class="status-progress"></div>
+                </div>
+                
+                <!-- Generated Nodes Preview -->
+                <div id="generated-preview" class="generated-preview" style="display: none;">
+                    <h4>Generated Nodes (<span id="generated-count">0</span>):</h4>
+                    <div class="generated-list"></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="generate-btn" class="btn btn-primary">
+                    <i data-lucide="zap"></i>
+                    Generate
+                </button>
+                <button id="add-to-palette-btn" class="btn btn-success" style="display: none;">
+                    <i data-lucide="plus-circle"></i>
+                    Add to Palette
+                </button>
+                <button id="modal-cancel-btn" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AST-Grep Pattern Search Modal -->
+    <div id="ast-grep-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>
+                    <i data-lucide="search-code"></i>
+                    Pattern Search &amp; Refactor
+                </h2>
+                <button class="modal-close" id="ast-grep-close-btn">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Mode Tabs -->
+                <div class="source-tabs">
+                    <button class="ast-mode-tab active" data-mode="search">
+                        <i data-lucide="search"></i>
+                        Search Nodes
+                    </button>
+                    <button class="ast-mode-tab" data-mode="refactor">
+                        <i data-lucide="wand-2"></i>
+                        Refactor
+                    </button>
+                </div>
+                
+                <!-- Search Panel -->
+                <div class="ast-panel" id="ast-search-panel">
+                    <label for="ast-pattern">Search Pattern:</label>
+                    <textarea id="ast-pattern" class="form-input code-input" rows="3" placeholder="e.g., print($MSG) or def $FUNC($ARGS): $$$BODY"></textarea>
+                    <div class="form-help">
+                        Use <code>$VAR</code> for single matches, <code>$$$VAR</code> for multiple matches
+                    </div>
+                    
+                    <!-- Common Patterns -->
+                    <div class="common-patterns">
+                        <h4>Common Patterns:</h4>
+                        <div class="pattern-chips" id="pattern-chips">
+                            <!-- Loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Refactor Panel -->
+                <div class="ast-panel" id="ast-refactor-panel" style="display: none;">
+                    <label for="ast-refactor-pattern">Find Pattern:</label>
+                    <textarea id="ast-refactor-pattern" class="form-input code-input" rows="2" placeholder="e.g., print($MSG)"></textarea>
+                    
+                    <label for="ast-replacement" style="margin-top: 15px;">Replace With:</label>
+                    <textarea id="ast-replacement" class="form-input code-input" rows="2" placeholder="e.g., logger.info($MSG)"></textarea>
+                    
+                    <div class="form-help">
+                        Use the same variable names (like <code>$MSG</code>) in both patterns
+                    </div>
+                    
+                    <div class="refactor-warning">
+                        <i data-lucide="alert-triangle"></i>
+                        Refactoring will modify the source code of matching nodes
+                    </div>
+                </div>
+                
+                <!-- Results Area -->
+                <div id="ast-results" class="ast-results" style="display: none;">
+                    <h4>
+                        <span id="ast-results-title">Matching Nodes</span>
+                        (<span id="ast-match-count">0</span>):
+                    </h4>
+                    <div class="ast-results-list" id="ast-results-list">
+                        <!-- Results populated dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Status Area -->
+                <div id="ast-status" class="generate-status" style="display: none;">
+                    <div class="status-message"></div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="ast-search-btn" class="btn btn-primary">
+                    <i data-lucide="search"></i>
+                    Search
+                </button>
+                
+                <!-- Tag Search Results Toggle -->
+                <label class="ast-tag-toggle" id="ast-tag-toggle-container" style="display: none;">
+                    <input type="checkbox" id="ast-tag-checkbox">
+                    <span class="ast-tag-toggle-label">
+                        <i data-lucide="tag"></i>
+                        Tag Search Results
+                    </span>
+                </label>
+                
+                <button id="ast-refactor-btn" class="btn btn-warning" style="display: none;">
+                    <i data-lucide="wand-2"></i>
+                    Apply Refactor
+                </button>
+                <button id="ast-clear-tags-btn" class="btn btn-secondary" style="display: none;">
+                    <i data-lucide="x-circle"></i>
+                    Clear All Tags
+                </button>
+                <button id="ast-cancel-btn" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu" style="display: none;">
+        <div class="context-item" data-action="delete">
+            <i data-lucide="trash-2"></i>
+            Delete
+        </div>
+        <div class="context-item" data-action="duplicate">
+            <i data-lucide="copy"></i>
+            Duplicate
+        </div>
+        <div class="context-item" data-action="properties">
+            <i data-lucide="settings"></i>
+            Properties
+        </div>
+    </div>
+
+    <!-- Live Execution Panel (Ledger-Sourced) -->
+    <div id="live-exec-panel" class="live-exec-panel collapsed">
+        <!-- Toggle Button -->
+        <button id="live-exec-toggle" class="live-exec-toggle" title="Toggle Live Execution">
+            <i data-lucide="play-circle"></i>
+            <span class="live-exec-toggle-label">Run</span>
+        </button>
+
+        <!-- Panel Container -->
+        <div class="live-exec-container">
+            <!-- Header -->
+            <div class="live-exec-header">
+                <div class="live-exec-title">
+                    <i data-lucide="terminal"></i>
+                    <span>Live Execution</span>
+                    <span id="exec-status" class="exec-status exec-status-idle">idle</span>
+                </div>
+                <div class="live-exec-actions">
+                    <button id="exec-refresh" class="exec-action-btn" title="Refresh node list">
+                        <i data-lucide="refresh-cw"></i>
+                    </button>
+                    <button id="exec-close-btn" class="exec-action-btn" title="Close">
+                        <i data-lucide="x"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="live-exec-controls">
+                <!-- Mode Toggle -->
+                <div class="exec-mode-toggle" title="Switch between Ledger (direct) and Registry (matrix) execution">
+                    <span class="exec-mode-label exec-mode-label-active" id="exec-mode-label-ledger">Ledger</span>
+                    <label class="exec-toggle-switch">
+                        <input type="checkbox" id="exec-mode-switch">
+                        <span class="exec-toggle-slider"></span>
+                    </label>
+                    <span class="exec-mode-label" id="exec-mode-label-registry">Registry</span>
+                </div>
+                <div class="exec-controls-divider"></div>
+                <button id="exec-run-selected" class="exec-ctrl-btn exec-ctrl-run" title="Run selected node">
+                    <i data-lucide="play"></i> Run
+                </button>
+                <button id="exec-run-all" class="exec-ctrl-btn exec-ctrl-run-all" title="Run all nodes in order">
+                    <i data-lucide="fast-forward"></i> Run All
+                </button>
+                <button id="exec-reset" class="exec-ctrl-btn exec-ctrl-reset" title="Reset executor namespace">
+                    <i data-lucide="rotate-ccw"></i> Reset
+                </button>
+                <button id="exec-clear-output" class="exec-ctrl-btn" title="Clear output">
+                    <i data-lucide="trash-2"></i>
+                </button>
+                <div class="exec-controls-divider"></div>
+                <button id="exec-run-engines" class="exec-ctrl-btn exec-ctrl-engines" title="Run all engine tabs simultaneously">
+                    <i data-lucide="layers"></i> ▶ Engines
+                </button>
+                <button id="exec-save-project" class="exec-ctrl-btn exec-ctrl-save" title="Save project to database">
+                    <i data-lucide="save"></i> Save
+                </button>
+                <button id="exec-load-project" class="exec-ctrl-btn exec-ctrl-load" title="Load project from database">
+                    <i data-lucide="folder-open"></i> Load
+                </button>
+                <button id="exec-import-json" class="exec-ctrl-btn exec-ctrl-demo" title="Import a JSON file to populate canvas &amp; engine tabs">
+                    <i data-lucide="file-json"></i> 📥 Import JSON
+                </button>
+                <input type="file" id="exec-import-json-file" accept=".json" style="display:none;">
+            </div>
+
+            <!-- Scrollable content area -->
+            <div class="live-exec-scroll">
+
+            <!-- Engine Tabs (multi-language code editors) -->
+            <div id="exec-engine-tabs" class="exec-engine-tabs">
+                <!-- Populated by live-execution.js: tab bar + code editor -->
+            </div>
+
+            <!-- Registry Matrix Grid (visible in Registry mode) -->
+            <div id="exec-matrix-grid" class="exec-matrix-grid" style="display:none;">
+                <div class="exec-matrix-header">
+                    <span class="exec-matrix-title">⬡ Engine Matrix</span>
+                    <span id="exec-matrix-stats" class="exec-matrix-stats"></span>
+                </div>
+                <div id="exec-matrix-body" class="exec-matrix-body">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Node List -->
+            <div class="live-exec-section">
+                <div class="live-exec-section-title">Ledger Nodes</div>
+                <div id="exec-node-list" class="exec-node-list">
+                    <div class="exec-empty">
+                        <span class="exec-empty-icon">📋</span>
+                        <p>No nodes in ledger yet.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Code Preview -->
+            <div class="live-exec-section">
+                <div class="live-exec-section-title">Code Preview</div>
+                <div id="exec-code-preview" class="exec-code-preview">
+                    <div class="exec-empty-hint">Select a node to preview its code</div>
+                </div>
+            </div>
+
+            <!-- Output -->
+            <div class="live-exec-section live-exec-section-grow">
+                <div class="live-exec-section-title">Output</div>
+                <div id="exec-output" class="exec-output"></div>
+            </div>
+
+            <!-- Variables -->
+            <div class="live-exec-section">
+                <div class="live-exec-section-title">Variables</div>
+                <div id="exec-variables" class="exec-variables">
+                    <div class="exec-empty-hint">No variables in scope</div>
+                </div>
+            </div>
+
+            <!-- Execution History -->
+            <div class="live-exec-section">
+                <div class="live-exec-section-title">Execution History</div>
+                <div id="exec-history" class="exec-history">
+                    <div class="exec-empty-hint">No execution history yet</div>
+                </div>
+            </div>
+
+            </div><!-- /.live-exec-scroll -->
+        </div>
+    </div>
+
+    <!-- AI Chat Panel (Anchored, Resizable) -->
+    <div id="ai-chat-panel" class="ai-chat-panel collapsed">
+        <!-- Toggle Button -->
+        <button id="ai-chat-toggle" class="ai-chat-toggle" title="Toggle AI Assistant">
+            <i data-lucide="bot"></i>
+            <span class="ai-chat-toggle-label">AI</span>
+        </button>
+        
+        <!-- Chat Container -->
+        <div class="ai-chat-container">
+            <!-- Resize Handle -->
+            <div class="ai-chat-resize-handle"></div>
+            
+            <!-- Chat Header -->
+            <div class="ai-chat-header">
+                <div class="ai-chat-title">
+                    <i data-lucide="bot"></i>
+                    <span>AI Assistant</span>
+                </div>
+                <div class="ai-chat-actions">
+                    <button class="ai-chat-action-btn" id="ai-chat-settings-btn" title="Settings">
+                        <i data-lucide="settings"></i>
+                    </button>
+                    <button class="ai-chat-action-btn" id="ai-chat-clear-btn" title="Clear Chat">
+                        <i data-lucide="trash-2"></i>
+                    </button>
+                    <button class="ai-chat-action-btn" id="ai-chat-minimize-btn" title="Minimize">
+                        <i data-lucide="minus"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Settings Panel (Hidden by default) -->
+            <div id="ai-chat-settings" class="ai-chat-settings" style="display: none;">
+                <div class="ai-settings-group">
+                    <label for="ai-endpoint">API Endpoint:</label>
+                    <input type="text" id="ai-endpoint" class="form-input" placeholder="https://api.openai.com/v1" value="">
+                </div>
+                <div class="ai-settings-group">
+                    <label for="ai-api-key">API Key:</label>
+                    <input type="password" id="ai-api-key" class="form-input" placeholder="sk-...">
+                </div>
+                <div class="ai-settings-group">
+                    <label for="ai-model">Model:</label>
+                    <select id="ai-model" class="form-input">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                        <option value="custom">Custom Model</option>
+                    </select>
+                </div>
+                <div class="ai-settings-group" id="custom-model-group" style="display: none;">
+                    <label for="ai-custom-model">Custom Model Name:</label>
+                    <input type="text" id="ai-custom-model" class="form-input" placeholder="model-name">
+                </div>
+                <div class="ai-settings-group">
+                    <label for="ai-temperature">Temperature:</label>
+                    <input type="range" id="ai-temperature" min="0" max="2" step="0.1" value="0.7">
+                    <span id="ai-temperature-value">0.7</span>
+                </div>
+                <div class="ai-settings-actions">
+                    <button id="ai-settings-save" class="btn btn-primary btn-small">Save Settings</button>
+                    <button id="ai-settings-cancel" class="btn btn-secondary btn-small">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div id="ai-chat-messages" class="ai-chat-messages">
+                <div class="ai-message ai-message-system">
+                    <div class="ai-message-avatar">
+                        <i data-lucide="bot"></i>
+                    </div>
+                    <div class="ai-message-content">
+                        <p>Hello! I'm your AI assistant for the Visual Editor. I can help you:</p>
+                        <ul>
+                            <li>Create nodes and connections on the canvas</li>
+                            <li>Generate complete workflows and data pipelines</li>
+                            <li>Explain node types and their usage</li>
+                            <li>Debug and optimize your visual programs</li>
+                        </ul>
+                        <p>Configure your API settings using the ⚙️ button above, then ask me anything!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="ai-quick-actions">
+                <button class="ai-quick-action" data-prompt="Create a data processing pipeline with input, transform, and output nodes">
+                    📊 Data Pipeline
+                </button>
+                <button class="ai-quick-action" data-prompt="What nodes are currently on my canvas?">
+                    🔍 Analyze Canvas
+                </button>
+                <button class="ai-quick-action" data-prompt="Generate a node that reads a JSON file and filters the data">
+                    📁 JSON Processor
+                </button>
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="ai-chat-input-container">
+                <textarea id="ai-chat-input" class="ai-chat-input" placeholder="Ask me to create nodes, explain concepts, or help with your workflow..." rows="1"></textarea>
+                <button id="ai-chat-send" class="ai-chat-send-btn" title="Send Message">
+                    <i data-lucide="send"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://unpkg.com/lucide@0.563.0/dist/umd/lucide.min.js"></script>
+    <script>
+        // Patch lucide.createIcons — v0.563.0 requires {icons} to be passed explicitly.
+        // Wrap the original so every call in app.js / live-execution.js etc. works unchanged.
+        (function(){
+            if (typeof lucide === 'undefined') return;
+            var _orig = lucide.createIcons.bind(lucide);
+            lucide.createIcons = function(opts) {
+                opts = opts || {};
+                if (!opts.icons) opts.icons = lucide.icons;
+                return _orig(opts);
+            };
+        })();
+    </script>
+    <!-- Monaco Editor (same engine as VS Code) — lazy-loaded by AMD require -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+    <script>
+        // Configure Monaco AMD loader — the editor modules load on first use
+        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+    </script>
+    <script src="/static/properties-panel.js"></script>
+    <script src="/static/repository-analyzer.js"></script>
+    <script src="/static/ai-chat.js"></script>
+    <script src="/static/panel-resizer.js"></script>
+    <script src="/static/live-execution.js"></script>
+    <script src="/static/runtime-panel.js"></script>
+    <script src="/static/settings-modal.js"></script>
+    <script src="/static/app.js"></script>
+    <script>
+        // Initialize Lucide icons after all scripts are loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

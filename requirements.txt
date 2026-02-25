@@ -1,0 +1,9 @@
+pytest>=7.0.0
+hypothesis>=6.0.0
+black>=22.0.0
+pylint>=2.15.0
+flake8>=5.0.0
+mypy>=0.991
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+alembic>=1.8.0
