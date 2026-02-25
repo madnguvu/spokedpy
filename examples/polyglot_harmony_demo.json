@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "version": "1.0",
+    "generator": "SpokedPy VPyD",
+    "description": "Functional Real-Code Demo spanning 4 runtime engines."
+  },
+  "session": {
+    "id": "demo_harmony_real_001",
+    "name": "Real Polyglot Execution"
+  },
+  "nodes": [
+    {
+      "id": "node_src_py",
+      "type": "function",
+      "position": [100, 250],
+      "parameters": {},
+      "metadata": {
+        "name": "Sensor Source (Python)",
+        "description": "Generates a JSON string representing sensor data.",
+        "language": "python",
+        "engine_slot": "nra01",
+        "source_code": "# Python Data Generator\nimport json\nimport random\n\n# Simulate sensor reading\nreadings = [random.randint(20, 25) for _ in range(3)]\npayload = {\n    'sensor_id': 'thermal_cam_01',\n    'values': readings,\n    'status': 'active'\n}\n\n# Pipeline Contract: Assign to _output\n_output = json.dumps(payload)"
+      },
+      "inputs": [{"name": "input", "type": "any"}],
+      "outputs": [{"name": "output", "type": "any"}]
+    },
+    {
+      "id": "node_opt_rust",
+      "type": "function",
+      "position": [400, 250],
+      "parameters": {},
+      "metadata": {
+        "name": "Zero-Cost Wrapper (Rust)",
+        "description": "Compiles to native binary, accepts stdin, produces stdout.",
+        "language": "rust",
+        "engine_slot": "nrd01",
+        "source_code": "use std::io::{self, Read};\n\nfn main() {\n    let mut buffer = String::new();\n    match io::stdin().read_to_string(&mut buffer) {\n        Ok(_) => {\n            let clean_data = buffer.trim();\n            println!(\"{{\\\"rust_wrapper\\\": {}}}\", clean_data);\n        }\n        Err(e) => eprintln!(\"Error: {}\", e),\n    }\n}"
+      },
+      "inputs": [{"name": "input", "type": "any"}],
+      "outputs": [{"name": "output", "type": "any"}]
+    },
+    {
+      "id": "node_view_js",
+      "type": "function",
+      "position": [700, 250],
+      "parameters": {},
+      "metadata": {
+        "name": "Frontend Formatter (Node.js)",
+        "description": "Executes in Node.js environment via subprocess.",
+        "language": "javascript",
+        "engine_slot": "nrb01",
+        "source_code": "const fs = require('fs');\ntry {\n    const input = fs.readFileSync(0, 'utf-8');\n    const data = JSON.parse(input);\n    data.ui_render = 'chart_v2';\n    data.timestamp = new Date().toISOString();\n    console.log(JSON.stringify(data));\n} catch (e) {\n    console.log(JSON.stringify({error: e.message}));\n}"
+      },
+      "inputs": [{"name": "input", "type": "any"}],
+      "outputs": [{"name": "output", "type": "any"}]
+    },
+    {
+      "id": "node_sec_c",
+      "type": "function",
+      "position": [1000, 250],
+      "parameters": {},
+      "metadata": {
+        "name": "Checksum (C)",
+        "description": "Compiles via GCC, computes simple string hash.",
+        "language": "c",
+        "engine_slot": "nrm01",
+        "source_code": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char buffer[4096];\n    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {\n        unsigned long hash = 5381;\n        int c;\n        char *str = buffer;\n        while (c = *str++)\n            hash = ((hash << 5) + hash) + c;\n        printf(\"CHECKSUM_VERIFIED: 0x%lx\", hash);\n    }\n    return 0;\n}"
+      },
+      "inputs": [{"name": "input", "type": "any"}],
+      "outputs": [{"name": "output", "type": "any"}]
+    }
+  ],
+  "connections": [
+    {
+      "source_node_id": "node_src_py",
+      "source_port": "output",
+      "target_node_id": "node_opt_rust",
+      "target_port": "input"
+    },
+    {
+      "source_node_id": "node_opt_rust",
+      "source_port": "output",
+      "target_node_id": "node_view_js",
+      "target_port": "input"
+    },
+    {
+      "source_node_id": "node_view_js",
+      "source_port": "output",
+      "target_node_id": "node_sec_c",
+      "target_port": "input"
+    }
+  ],
+  "execution_sequence": [
+    {
+      "slot": "nra01",
+      "node_id": "node_src_py",
+      "code": "# Python Data Generator\nimport json\nimport random\n\n# Simulate sensor reading\nreadings = [random.randint(20, 25) for _ in range(3)]\npayload = {\n    'sensor_id': 'thermal_cam_01',\n    'values': readings,\n    'status': 'active'\n}\n\n# Pipeline Contract: Assign to _output\n_output = json.dumps(payload)"
+    },
+    {
+      "slot": "nrd01",
+      "node_id": "node_opt_rust",
+      "code": "use std::io::{self, Read};\n\nfn main() {\n    // Real Rust I/O reading from standard input\n    let mut buffer = String::new();\n    match io::stdin().read_to_string(&mut buffer) {\n        Ok(_) => {\n            // Wrap data in a High-Performance structure (Simulated logic)\n            let clean_data = buffer.trim();\n            println!(\"{{\\\"rust_wrapper\\\": {}}}\", clean_data);\n        }\n        Err(e) => eprintln!(\"Error: {}\", e),\n    }\n}"
+    },
+    {
+      "slot": "nrb01",
+      "node_id": "node_view_js",
+      "code": "const fs = require('fs');\n\n// Read from STDIN\ntry {\n    const input = fs.readFileSync(0, 'utf-8');\n    const data = JSON.parse(input);\n    \n    // Add visualization metadata\n    data.ui_render = \"chart_v2\";\n    data.timestamp = new Date().toISOString();\n    \n    console.log(JSON.stringify(data));\n} catch (e) {\n    console.log(JSON.stringify({error: e.message}));\n}"
+    },
+    {
+      "slot": "nrm01",
+      "node_id": "node_sec_c",
+      "code": "#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char buffer[4096];\n    // Read STDIN\n    if (fgets(buffer, sizeof(buffer), stdin) != NULL) {\n        unsigned long hash = 5381;\n        int c;\n        char *str = buffer;\n        \n        while (c = *str++)\n            hash = ((hash << 5) + hash) + c; /* hash * 33 + c */\n            \n        printf(\"CHECKSUM_VERIFIED: 0x%lx\", hash);\n    }\n    return 0;\n}"
+    }
+  ]
+}
