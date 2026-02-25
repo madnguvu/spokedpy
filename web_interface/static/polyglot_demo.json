@@ -1,0 +1,154 @@
+{
+  "project": {
+    "name": "SpokedPy System Performance Monitor",
+    "saved_at": "2026-02-08T00:00:00.000Z",
+    "description": "System performance demo — 7 engines query real hardware metrics to show the impact of SpokedPy running within SpokedPy"
+  },
+  "state": {
+    "nodes": [
+      {
+        "id": "demo-sysinfo",
+        "type": "function",
+        "position": [100, 80],
+        "parameters": {
+          "source_code": "# System Overview\nimport platform, os, sys\ncpu_count = os.cpu_count() or 1\nprint(f'OS: {platform.system()} {platform.release()}')\nprint(f'Machine: {platform.machine()}')\nprint(f'Python: {sys.version.split()[0]}')\nprint(f'CPUs: {cpu_count}')"
+        },
+        "metadata": { "name": "System Info", "description": "Collect basic system information" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-cpu-load",
+        "type": "function",
+        "position": [420, 80],
+        "parameters": {
+          "source_code": "# CPU Measurement\nimport time, os\nt0 = time.perf_counter()\ntotal = 0\nfor i in range(500000): total += i * i\nelapsed = time.perf_counter() - t0\nprint(f'CPU benchmark: 500k iterations in {elapsed:.3f}s')\nprint(f'Throughput: {500000/elapsed:,.0f} ops/sec')"
+        },
+        "metadata": { "name": "CPU Load", "description": "Benchmark CPU with compute loop" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-mem-scan",
+        "type": "function",
+        "position": [740, 80],
+        "parameters": {
+          "source_code": "# Memory Scan\nimport sys\ndata = [list(range(1000)) for _ in range(100)]\nmem_bytes = sys.getsizeof(data) + sum(sys.getsizeof(row) for row in data)\nprint(f'Allocated: {len(data)} x 1000 lists')\nprint(f'Top-level size: {mem_bytes:,} bytes')\nprint(f'Estimate: {mem_bytes/1024:.1f} KB tracked')\ndel data"
+        },
+        "metadata": { "name": "Memory Scan", "description": "Measure memory allocation" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-report",
+        "type": "function",
+        "position": [1060, 80],
+        "parameters": {
+          "source_code": "# SpokedPy Performance Report\nimport platform, os, time\nprint('=' * 44)\nprint('  SpokedPy Self-Monitoring Report')\nprint('=' * 44)\nprint(f'  Host: {platform.node()}')\nprint(f'  OS:   {platform.system()} {platform.release()}')\nprint(f'  CPUs: {os.cpu_count()}')\nprint(f'  Time: {time.strftime(\"%H:%M:%S\")}')\nprint('=' * 44)"
+        },
+        "metadata": { "name": "Perf Report", "description": "Final performance summary" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-js-uptime",
+        "type": "function",
+        "position": [420, 260],
+        "parameters": {
+          "source_code": "// Node.js uptime & memory check\nconst os = require('os');\nconsole.log('Node uptime: ' + os.uptime() + 's');\nconsole.log('Free mem: ' + (os.freemem()/1024/1024).toFixed(0) + ' MB');"
+        },
+        "metadata": { "name": "JS Uptime", "description": "Node.js system uptime check", "source_language": "javascript" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-go-cpus",
+        "type": "function",
+        "position": [740, 260],
+        "parameters": {
+          "source_code": "package main\nimport (\n\t\"fmt\"\n\t\"runtime\"\n)\nfunc main() {\n\tfmt.Printf(\"Go runtime CPUs: %d\\n\", runtime.NumCPU())\n\tvar m runtime.MemStats\n\truntime.ReadMemStats(&m)\n\tfmt.Printf(\"Go heap: %d KB\\n\", m.HeapAlloc/1024)\n}"
+        },
+        "metadata": { "name": "Go CPUs", "description": "Go runtime CPU and memory stats", "source_language": "go" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      }
+    ],
+    "connections": [
+      {
+        "source_node_id": "demo-sysinfo",
+        "source_port": "output",
+        "target_node_id": "demo-cpu-load",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-cpu-load",
+        "source_port": "output",
+        "target_node_id": "demo-mem-scan",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-mem-scan",
+        "source_port": "output",
+        "target_node_id": "demo-report",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-cpu-load",
+        "source_port": "output",
+        "target_node_id": "demo-js-uptime",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-js-uptime",
+        "source_port": "output",
+        "target_node_id": "demo-go-cpus",
+        "target_port": "input"
+      }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+  },
+  "engine_tabs": [
+    {
+      "engine_letter": "a",
+      "language": "python",
+      "label": "Python — System Profiler",
+      "code": "# ━━━ SpokedPy Python Engine ━━━\n# System performance profiler — real hardware metrics\n\nimport platform, os, sys, time, subprocess\nfrom datetime import datetime\n\nprint('=' * 48)\nprint('  SpokedPy — Python System Profiler')\nprint('=' * 48)\n\n# Platform info\nprint(f'  OS          : {platform.system()} {platform.release()}')\nprint(f'  Machine     : {platform.machine()}')\nprint(f'  Node        : {platform.node()}')\nprint(f'  Python      : {sys.version.split()[0]}')\nprint(f'  CPU cores   : {os.cpu_count()}')\n\n# Memory via OS commands (cross-platform)\ntry:\n    if platform.system() == 'Windows':\n        r = subprocess.run(\n            ['wmic', 'OS', 'get', 'FreePhysicalMemory,TotalVisibleMemorySize', '/value'],\n            capture_output=True, text=True, timeout=5\n        )\n        lines = [l.strip() for l in r.stdout.strip().split('\\n') if '=' in l]\n        mem = {}\n        for l in lines:\n            k, v = l.split('=')\n            mem[k] = int(v)  # KB\n        total_mb = mem.get('TotalVisibleMemorySize', 0) / 1024\n        free_mb  = mem.get('FreePhysicalMemory', 0) / 1024\n        used_mb  = total_mb - free_mb\n        pct      = (used_mb / total_mb * 100) if total_mb else 0\n        print(f'  RAM total   : {total_mb:,.0f} MB')\n        print(f'  RAM used    : {used_mb:,.0f} MB ({pct:.1f}%)')\n        print(f'  RAM free    : {free_mb:,.0f} MB')\n    else:\n        import shutil\n        total, used, free = shutil.disk_usage('/')\n        print(f'  Disk total  : {total // (1024**3)} GB')\nexcept Exception as e:\n    print(f'  Memory info : unavailable ({e})')\n\n# CPU benchmark — measure SpokedPy's own impact\nprint('-' * 48)\nprint('  CPU Benchmark (running inside SpokedPy):')\n\nt0 = time.perf_counter()\ntotal = 0\nfor i in range(1_000_000):\n    total += i * i\nelapsed = time.perf_counter() - t0\n\nprint(f'  1M iterations : {elapsed:.4f}s')\nprint(f'  Throughput    : {1_000_000/elapsed:,.0f} ops/sec')\nprint(f'  Checksum      : {total % 999_999_937}')\n\n# Process count\ntry:\n    if platform.system() == 'Windows':\n        r = subprocess.run(['tasklist', '/FO', 'CSV', '/NH'],\n                          capture_output=True, text=True, timeout=5)\n        proc_count = len([l for l in r.stdout.strip().split('\\n') if l.strip()])\n    else:\n        r = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=5)\n        proc_count = len(r.stdout.strip().split('\\n')) - 1\n    print(f'  Processes   : {proc_count} running')\nexcept Exception:\n    pass\n\nprint('-' * 48)\nprint(f'  Timestamp   : {datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}')\nprint('  Status      : SpokedPy monitoring itself')\nprint('=' * 48)"
+    },
+    {
+      "engine_letter": "b",
+      "language": "javascript",
+      "label": "JavaScript — Hardware Monitor",
+      "code": "// ━━━ SpokedPy JavaScript Engine ━━━\n// Node.js hardware monitor — real system data\n\nconst os = require('os');\n\nconsole.log('='.repeat(44));\nconsole.log('  SpokedPy — Node.js Hardware Monitor');\nconsole.log('='.repeat(44));\n\n// System info\nconsole.log('  Hostname  : ' + os.hostname());\nconsole.log('  Platform  : ' + os.platform() + ' ' + os.arch());\nconsole.log('  OS        : ' + os.type() + ' ' + os.release());\nconsole.log('  Node      : ' + process.version);\nconsole.log('  CPUs      : ' + os.cpus().length);\nconsole.log('  CPU Model : ' + os.cpus()[0].model);\n\n// Memory\nconst totalMem = os.totalmem();\nconst freeMem  = os.freemem();\nconst usedMem  = totalMem - freeMem;\nconst pct      = ((usedMem / totalMem) * 100).toFixed(1);\nconsole.log('-'.repeat(44));\nconsole.log('  RAM total : ' + (totalMem / 1024 / 1024 / 1024).toFixed(1) + ' GB');\nconsole.log('  RAM used  : ' + (usedMem / 1024 / 1024 / 1024).toFixed(1) + ' GB (' + pct + '%)');\nconsole.log('  RAM free  : ' + (freeMem / 1024 / 1024 / 1024).toFixed(1) + ' GB');\n\n// Uptime\nconst upSec = os.uptime();\nconst upH = Math.floor(upSec / 3600);\nconst upM = Math.floor((upSec % 3600) / 60);\nconsole.log('  Uptime    : ' + upH + 'h ' + upM + 'm');\n\n// CPU usage snapshot\nconst cpus = os.cpus();\nlet totalIdle = 0, totalTick = 0;\nfor (const cpu of cpus) {\n    for (const type in cpu.times) totalTick += cpu.times[type];\n    totalIdle += cpu.times.idle;\n}\nconst cpuUsage = ((1 - totalIdle / totalTick) * 100).toFixed(1);\nconsole.log('  CPU avg   : ' + cpuUsage + '% (since boot)');\n\n// Node.js process memory\nconst mem = process.memoryUsage();\nconsole.log('-'.repeat(44));\nconsole.log('  Node heap : ' + (mem.heapUsed / 1024 / 1024).toFixed(1) + ' MB / ' + (mem.heapTotal / 1024 / 1024).toFixed(1) + ' MB');\nconsole.log('  Node RSS  : ' + (mem.rss / 1024 / 1024).toFixed(1) + ' MB');\n\n// Network interfaces\nconst nets = os.networkInterfaces();\nconst ifaceNames = Object.keys(nets).filter(n => !n.includes('Loopback') && !n.startsWith('lo'));\nconsole.log('  Net ifaces: ' + ifaceNames.length + ' active');\nfor (const name of ifaceNames.slice(0, 3)) {\n    const ipv4 = nets[name].find(n => n.family === 'IPv4');\n    if (ipv4) console.log('    ' + name.substring(0, 18) + ': ' + ipv4.address);\n}\n\nconsole.log('-'.repeat(44));\nconsole.log('  Measured inside SpokedPy runtime');\nconsole.log('='.repeat(44));"
+    },
+    {
+      "engine_letter": "c",
+      "language": "typescript",
+      "label": "TypeScript — Performance Analyzer",
+      "code": "// ━━━ SpokedPy TypeScript Engine ━━━\n// Typed performance analyzer with interfaces\n\nimport * as os from 'os';\n\ninterface SystemSnapshot {\n    hostname: string;\n    platform: string;\n    cpuCount: number;\n    cpuModel: string;\n    totalMemGB: number;\n    freeMemGB: number;\n    usedPct: number;\n    uptimeHours: number;\n}\n\ninterface BenchmarkResult {\n    name: string;\n    iterations: number;\n    elapsedMs: number;\n    opsPerSec: number;\n}\n\nfunction captureSystem(): SystemSnapshot {\n    const total = os.totalmem();\n    const free  = os.freemem();\n    return {\n        hostname:    os.hostname(),\n        platform:    `${os.platform()} ${os.arch()}`,\n        cpuCount:    os.cpus().length,\n        cpuModel:    os.cpus()[0]?.model || 'unknown',\n        totalMemGB:  +(total / 1073741824).toFixed(1),\n        freeMemGB:   +(free / 1073741824).toFixed(1),\n        usedPct:     +((1 - free / total) * 100).toFixed(1),\n        uptimeHours: +(os.uptime() / 3600).toFixed(1),\n    };\n}\n\nfunction benchmark(name: string, iterations: number, fn: () => void): BenchmarkResult {\n    const t0 = Date.now();\n    for (let i = 0; i < iterations; i++) fn();\n    const elapsed = Date.now() - t0;\n    return {\n        name,\n        iterations,\n        elapsedMs: elapsed,\n        opsPerSec: Math.round(iterations / (elapsed / 1000)),\n    };\n}\n\n// Capture\nconst snap = captureSystem();\n\nconsole.log('='.repeat(47));\nconsole.log('  SpokedPy — TypeScript Performance Analyzer');\nconsole.log('='.repeat(47));\nconsole.log(`  Host     : ${snap.hostname}`);\nconsole.log(`  Platform : ${snap.platform}`);\nconsole.log(`  CPUs     : ${snap.cpuCount} x ${snap.cpuModel.substring(0, 30)}`);\nconsole.log(`  Memory   : ${snap.usedPct}% used (${snap.freeMemGB}/${snap.totalMemGB} GB free)`);\nconsole.log(`  Uptime   : ${snap.uptimeHours} hours`);\nconsole.log('-'.repeat(47));\n\n// Benchmarks\nconst results: BenchmarkResult[] = [];\n\nresults.push(benchmark('Array fill', 50000, () => {\n    const a = new Array(100).fill(0).map((_, i) => i * i);\n}));\n\nresults.push(benchmark('String concat', 20000, () => {\n    let s = '';\n    for (let i = 0; i < 50; i++) s += String.fromCharCode(65 + (i % 26));\n}));\n\nresults.push(benchmark('Object create', 50000, () => {\n    const o = { x: Math.random(), y: Math.random(), z: Math.random() };\n}));\n\nconsole.log('  Benchmarks (inside SpokedPy):');\nfor (const r of results) {\n    const bar = '#'.repeat(Math.min(20, Math.round(r.opsPerSec / 100000)));\n    console.log(`    ${r.name.padEnd(14)} ${String(r.elapsedMs).padStart(5)}ms  ${r.opsPerSec.toLocaleString().padStart(12)} ops/s  ${bar}`);\n}\n\nconsole.log('-'.repeat(47));\nconsole.log('  All metrics captured from within SpokedPy');\nconsole.log('='.repeat(47));"
+    },
+    {
+      "engine_letter": "d",
+      "language": "rust",
+      "label": "Rust — CPU Benchmark",
+      "code": "// ━━━ SpokedPy Rust Engine ━━━\n// High-performance CPU benchmark with system info\n\nuse std::time::Instant;\nuse std::env;\n\nfn is_prime(n: u64) -> bool {\n    if n < 2 { return false; }\n    if n < 4 { return true; }\n    if n % 2 == 0 || n % 3 == 0 { return false; }\n    let mut i = 5u64;\n    while i * i <= n {\n        if n % i == 0 || n % (i + 2) == 0 { return false; }\n        i += 6;\n    }\n    true\n}\n\nfn main() {\n    println!(\"================================================\");\n    println!(\"  SpokedPy — Rust CPU Benchmark\");\n    println!(\"================================================\");\n\n    // Environment info\n    let cwd = env::current_dir().unwrap_or_default();\n    println!(\"  Working dir : {}\", cwd.display());\n    println!(\"  Rust target : {}\", env::consts::ARCH);\n    println!(\"  OS          : {} {}\", env::consts::OS, env::consts::FAMILY);\n\n    // Prime sieve benchmark\n    let limit = 100_000u64;\n    let t0 = Instant::now();\n    let mut count = 0u64;\n    let mut last = 0u64;\n    for n in 2..=limit {\n        if is_prime(n) {\n            count += 1;\n            last = n;\n        }\n    }\n    let elapsed = t0.elapsed();\n\n    println!(\"------------------------------------------------\");\n    println!(\"  Prime sieve to {}:\", limit);\n    println!(\"    Primes found : {}\", count);\n    println!(\"    Largest      : {}\", last);\n    println!(\"    Time         : {:.3}ms\", elapsed.as_secs_f64() * 1000.0);\n    println!(\"    Speed        : {:.0} checks/sec\",\n             limit as f64 / elapsed.as_secs_f64());\n\n    // Fibonacci benchmark\n    let fib_n = 40u64;\n    let t1 = Instant::now();\n    let mut a: u64 = 0;\n    let mut b: u64 = 1;\n    for _ in 0..fib_n {\n        let tmp = a + b;\n        a = b;\n        b = tmp;\n    }\n    let fib_time = t1.elapsed();\n    println!(\"------------------------------------------------\");\n    println!(\"  Fibonacci({}): {}\", fib_n, b);\n    println!(\"    Time: {:.3}us\", fib_time.as_nanos() as f64 / 1000.0);\n\n    // Memory allocation benchmark\n    let t2 = Instant::now();\n    let v: Vec<u64> = (0..500_000).map(|i| i * i).collect();\n    let alloc_time = t2.elapsed();\n    println!(\"------------------------------------------------\");\n    println!(\"  Vec alloc 500K u64:\");\n    println!(\"    Time  : {:.3}ms\", alloc_time.as_secs_f64() * 1000.0);\n    println!(\"    Sum   : {}\", v.iter().take(100).sum::<u64>());\n    println!(\"    Size  : {} KB\", v.len() * 8 / 1024);\n\n    println!(\"------------------------------------------------\");\n    println!(\"  Compiled & measured inside SpokedPy\");\n    println!(\"================================================\");\n}"
+    },
+    {
+      "engine_letter": "e",
+      "language": "java",
+      "label": "Java — JVM Resource Monitor",
+      "code": "// ━━━ SpokedPy Java Engine ━━━\n// JVM resource monitor with runtime metrics\n\nimport java.lang.management.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Runtime rt = Runtime.getRuntime();\n        OperatingSystemMXBean osMX = ManagementFactory.getOperatingSystemMXBean();\n        RuntimeMXBean rtMX = ManagementFactory.getRuntimeMXBean();\n\n        System.out.println(\"================================================\");\n        System.out.println(\"  SpokedPy — Java JVM Resource Monitor\");\n        System.out.println(\"================================================\");\n\n        // System info\n        System.out.printf(\"  OS         : %s %s (%s)%n\",\n            osMX.getName(), osMX.getVersion(), osMX.getArch());\n        System.out.printf(\"  Java       : %s (%s)%n\",\n            System.getProperty(\"java.version\"),\n            System.getProperty(\"java.vm.name\"));\n        System.out.printf(\"  Processors : %d%n\", rt.availableProcessors());\n\n        // JVM Memory\n        long maxMem   = rt.maxMemory();\n        long totalMem = rt.totalMemory();\n        long freeMem  = rt.freeMemory();\n        long usedMem  = totalMem - freeMem;\n\n        System.out.println(\"------------------------------------------------\");\n        System.out.printf(\"  Heap max   : %,d MB%n\", maxMem / (1024 * 1024));\n        System.out.printf(\"  Heap total : %,d MB%n\", totalMem / (1024 * 1024));\n        System.out.printf(\"  Heap used  : %,d MB%n\", usedMem / (1024 * 1024));\n        System.out.printf(\"  Heap free  : %,d MB%n\", freeMem / (1024 * 1024));\n\n        // CPU benchmark\n        System.out.println(\"------------------------------------------------\");\n        long t0 = System.nanoTime();\n        long sum = 0;\n        for (int i = 0; i < 2_000_000; i++) {\n            sum += (long) i * i;\n        }\n        double elapsedMs = (System.nanoTime() - t0) / 1_000_000.0;\n        System.out.printf(\"  Benchmark  : 2M iterations in %.1fms%n\", elapsedMs);\n        System.out.printf(\"  Throughput : %,.0f ops/sec%n\", 2_000_000.0 / (elapsedMs / 1000));\n        System.out.printf(\"  Checksum   : %d%n\", sum % 999_999_937);\n\n        // GC info\n        List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();\n        System.out.println(\"------------------------------------------------\");\n        for (GarbageCollectorMXBean gc : gcBeans) {\n            String gcName = gc.getName();\n            if (gcName.length() > 8) gcName = gcName.substring(0, 8);\n            System.out.printf(\"  GC %-8s: %d collections, %dms%n\",\n                gcName, gc.getCollectionCount(), gc.getCollectionTime());\n        }\n\n        // Thread count\n        int threads = ManagementFactory.getThreadMXBean().getThreadCount();\n        long jvmUptime = rtMX.getUptime();\n        System.out.println(\"------------------------------------------------\");\n        System.out.printf(\"  Threads    : %d active%n\", threads);\n        System.out.printf(\"  JVM uptime : %dms%n\", jvmUptime);\n        System.out.println(\"  Measured inside SpokedPy runtime\");\n        System.out.println(\"================================================\");\n    }\n}"
+    },
+    {
+      "engine_letter": "i",
+      "language": "go",
+      "label": "Go — Goroutine System Probe",
+      "code": "// ━━━ SpokedPy Go Engine ━━━\n// Goroutine-powered system probe with runtime metrics\n\npackage main\n\nimport (\n\t\"fmt\"\n\t\"os\"\n\t\"runtime\"\n\t\"sync\"\n\t\"time\"\n)\n\nfunc cpuBench(iterations int, wg *sync.WaitGroup, results chan<- float64) {\n\tdefer wg.Done()\n\tt0 := time.Now()\n\tsum := int64(0)\n\tfor i := 0; i < iterations; i++ {\n\t\tsum += int64(i) * int64(i)\n\t}\n\tresults <- time.Since(t0).Seconds()\n}\n\nfunc main() {\n\tfmt.Println(\"================================================\")\n\tfmt.Println(\"  SpokedPy — Go Goroutine System Probe\")\n\tfmt.Println(\"================================================\")\n\n\t// System info\n\thostname, _ := os.Hostname()\n\tfmt.Printf(\"  Hostname    : %s\\n\", hostname)\n\tfmt.Printf(\"  OS/Arch     : %s/%s\\n\", runtime.GOOS, runtime.GOARCH)\n\tfmt.Printf(\"  Go version  : %s\\n\", runtime.Version())\n\tfmt.Printf(\"  CPUs        : %d\\n\", runtime.NumCPU())\n\tfmt.Printf(\"  GOMAXPROCS  : %d\\n\", runtime.GOMAXPROCS(0))\n\n\t// Memory stats\n\tvar m runtime.MemStats\n\truntime.ReadMemStats(&m)\n\tfmt.Println(\"------------------------------------------------\")\n\tfmt.Printf(\"  Heap alloc  : %d KB\\n\", m.HeapAlloc/1024)\n\tfmt.Printf(\"  Heap sys    : %d KB\\n\", m.HeapSys/1024)\n\tfmt.Printf(\"  Stack sys   : %d KB\\n\", m.StackSys/1024)\n\tfmt.Printf(\"  GC cycles   : %d\\n\", m.NumGC)\n\tfmt.Printf(\"  Goroutines  : %d\\n\", runtime.NumGoroutine())\n\n\t// Parallel CPU benchmark with goroutines\n\tnumWorkers := runtime.NumCPU()\n\tif numWorkers > 8 {\n\t\tnumWorkers = 8\n\t}\n\titerPerWorker := 1_000_000\n\tresults := make(chan float64, numWorkers)\n\tvar wg sync.WaitGroup\n\n\tfmt.Println(\"------------------------------------------------\")\n\tfmt.Printf(\"  Benchmark: %d goroutines x %dK iterations\\n\", numWorkers, iterPerWorker/1000)\n\n\tt0 := time.Now()\n\tfor i := 0; i < numWorkers; i++ {\n\t\twg.Add(1)\n\t\tgo cpuBench(iterPerWorker, &wg, results)\n\t}\n\tgo func() { wg.Wait(); close(results) }()\n\n\tvar maxWorkerTime float64\n\tfor r := range results {\n\t\tif r > maxWorkerTime {\n\t\t\tmaxWorkerTime = r\n\t\t}\n\t}\n\twallTime := time.Since(t0)\n\n\ttotalOps := numWorkers * iterPerWorker\n\tfmt.Printf(\"  Wall time   : %v\\n\", wallTime)\n\tfmt.Printf(\"  Total ops   : %d\\n\", totalOps)\n\tfmt.Printf(\"  Throughput  : %.0f ops/sec\\n\", float64(totalOps)/wallTime.Seconds())\n\n\t// Post-benchmark memory\n\truntime.ReadMemStats(&m)\n\tfmt.Println(\"------------------------------------------------\")\n\tfmt.Printf(\"  Post-bench heap: %d KB (+GC: %d)\\n\", m.HeapAlloc/1024, m.NumGC)\n\tfmt.Println(\"  All goroutines measured inside SpokedPy\")\n\tfmt.Println(\"================================================\")\n}"
+    },
+    {
+      "engine_letter": "n",
+      "language": "bash",
+      "label": "Bash — Shell System Stats",
+      "code": "#!/bin/bash\n# === SpokedPy Shell Engine ===\n# System stats - bash commands auto-translated to PowerShell on Windows\n\necho '================================================'\necho '  SpokedPy - Shell System Stats'\necho '================================================'\necho \"  Hostname : $(hostname)\"\necho \"  Date     : $(date)\"\necho \"  CPUs     : $(nproc)\"\necho '------------------------------------------------'\necho '  Benchmark:'\nSUM=0\nfor i in $(seq 1 5000); do SUM=$((SUM + i)); done\necho \"    sum(1..5000) = $SUM\"\necho '------------------------------------------------'\necho '  Measured inside SpokedPy runtime'\necho '================================================'"
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "project": {
+    "name": "VPyD Polyglot Demo",
+    "saved_at": "2026-02-08T00:00:00.000Z",
+    "description": "Full execution demo — 7 engines, data pipeline canvas, staging-ready"
+  },
+  "state": {
+    "nodes": [
+      {
+        "id": "demo-ingest",
+        "type": "function",
+        "position": [100, 80],
+        "parameters": {
+          "source_code": "# Data Ingestion\nimport json, math\nsensors = [{'id': f's{i}', 'temp': round(20+10*math.sin(i*0.3),1)} for i in range(25)]\nprint(f'Ingested {len(sensors)} records')"
+        },
+        "metadata": { "name": "Ingest Data", "description": "Generate sensor readings" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-transform",
+        "type": "function",
+        "position": [420, 80],
+        "parameters": {
+          "source_code": "# Transform\nfor s in sensors:\n    s['anomaly'] = s['temp'] > 28.0\nanomalies = [s for s in sensors if s['anomaly']]\nprint(f'Flagged {len(anomalies)} anomalies')"
+        },
+        "metadata": { "name": "Transform", "description": "Flag anomalous readings" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-aggregate",
+        "type": "function",
+        "position": [740, 80],
+        "parameters": {
+          "source_code": "# Aggregate\navg_temp = sum(s['temp'] for s in sensors) / len(sensors)\nmax_temp = max(s['temp'] for s in sensors)\nprint(f'Avg: {avg_temp:.1f}°C  Max: {max_temp:.1f}°C  Anomalies: {len(anomalies)}')"
+        },
+        "metadata": { "name": "Aggregate", "description": "Compute statistics" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-report",
+        "type": "function",
+        "position": [1060, 80],
+        "parameters": {
+          "source_code": "# Report\nprint('━'*40)\nprint(f'  Pipeline Report')\nprint(f'  Records: {len(sensors)}')\nprint(f'  Avg temp: {avg_temp:.1f}°C')\nprint(f'  Max temp: {max_temp:.1f}°C')\nprint(f'  Anomalies: {len(anomalies)}')\nprint('━'*40)"
+        },
+        "metadata": { "name": "Report", "description": "Print final summary" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-validate-js",
+        "type": "function",
+        "position": [420, 260],
+        "parameters": {
+          "source_code": "// Validation node (JavaScript engine)\nconst valid = typeof sensors !== 'undefined';\nconsole.log('JS Validator:', valid ? 'schema OK' : 'no data');"
+        },
+        "metadata": { "name": "JS Validator", "description": "Cross-engine validation via JavaScript", "source_language": "javascript" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      },
+      {
+        "id": "demo-persist-go",
+        "type": "function",
+        "position": [740, 260],
+        "parameters": {
+          "source_code": "// Persistence node (Go engine)\npackage main\nimport \"fmt\"\nfunc main() { fmt.Println(\"Go Persistence: data committed\") }"
+        },
+        "metadata": { "name": "Go Persistence", "description": "Concurrent data persistence via Go", "source_language": "go" },
+        "inputs": [{ "name": "input", "type": "any" }],
+        "outputs": [{ "name": "output", "type": "any" }]
+      }
+    ],
+    "connections": [
+      {
+        "source_node_id": "demo-ingest",
+        "source_port": "output",
+        "target_node_id": "demo-transform",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-transform",
+        "source_port": "output",
+        "target_node_id": "demo-aggregate",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-aggregate",
+        "source_port": "output",
+        "target_node_id": "demo-report",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-transform",
+        "source_port": "output",
+        "target_node_id": "demo-validate-js",
+        "target_port": "input"
+      },
+      {
+        "source_node_id": "demo-validate-js",
+        "source_port": "output",
+        "target_node_id": "demo-persist-go",
+        "target_port": "input"
+      }
+    ],
+    "viewport": { "x": 0, "y": 0, "zoom": 1 }
+  },
+  "engine_tabs": [
+    {
+      "engine_letter": "a",
+      "language": "python",
+      "label": "Python — Data Pipeline",
+      "code": "# ━━━ VPyD Python Engine ━━━\n# Sensor data pipeline: generate → transform → aggregate → report\n\nimport json, math\nfrom collections import Counter\nfrom datetime import datetime\n\n# 1) Generate sensor data\nsensors = []\nfor i in range(50):\n    temp = 20 + 10 * math.sin(i * 0.3) + (i % 7) * 0.5\n    humidity = 45 + 15 * math.cos(i * 0.2)\n    sensors.append({\n        'id': f'sensor-{i:03d}',\n        'temp_c': round(temp, 2),\n        'humidity': round(humidity, 1),\n        'zone': ['North', 'South', 'East', 'West'][i % 4],\n    })\n\n# 2) Flag anomalies (temp > 28°C)\nfor s in sensors:\n    s['anomaly'] = s['temp_c'] > 28.0\n\n# 3) Aggregate by zone\nzone_stats = {}\nfor s in sensors:\n    z = s['zone']\n    if z not in zone_stats:\n        zone_stats[z] = {'temps': [], 'anomalies': 0, 'count': 0}\n    zone_stats[z]['temps'].append(s['temp_c'])\n    zone_stats[z]['anomalies'] += int(s['anomaly'])\n    zone_stats[z]['count'] += 1\n\n# 4) Report\nprint('╔══════════════════════════════════════════════╗')\nprint('║     VPyD Sensor Data Pipeline Report         ║')\nprint('╠══════════════════════════════════════════════╣')\nfor zone in sorted(zone_stats):\n    st = zone_stats[zone]\n    avg = sum(st['temps']) / len(st['temps'])\n    mx  = max(st['temps'])\n    mn  = min(st['temps'])\n    print(f'║  {zone:6s} | avg {avg:5.1f}°C | range [{mn:5.1f}, {mx:5.1f}] | alerts {st[\"anomalies\"]}')\nprint('╠══════════════════════════════════════════════╣')\ntotal_anomalies = sum(s['anomaly'] for s in sensors)\nprint(f'║  Total sensors : {len(sensors)}')\nprint(f'║  Anomalies     : {total_anomalies}')\nprint(f'║  Generated at  : {datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")}')\nprint('╚══════════════════════════════════════════════╝')\n\npipeline_result = {'total': len(sensors), 'zones': list(zone_stats.keys()), 'anomalies': total_anomalies}"
+    },
+    {
+      "engine_letter": "b",
+      "language": "javascript",
+      "label": "JavaScript — Task Scheduler",
+      "code": "// ━━━ VPyD JavaScript Engine ━━━\n// Priority task scheduler with async execution\n\nclass TaskScheduler {\n    constructor() {\n        this.queue = [];\n        this.results = [];\n        this.start = Date.now();\n    }\n    add(name, priority, fn) {\n        this.queue.push({ name, priority, fn });\n        this.queue.sort((a, b) => b.priority - a.priority);\n    }\n    async run() {\n        console.log('┌──────────────────────────────────────┐');\n        console.log('│  VPyD Task Scheduler — Execution     │');\n        console.log('├──────────────────────────────────────┤');\n        for (const task of this.queue) {\n            const t0 = Date.now();\n            const result = await task.fn();\n            const ms = Date.now() - t0;\n            console.log(`│  [P${task.priority}] ${task.name.padEnd(22)} ${ms}ms`);\n            this.results.push({ name: task.name, result, ms });\n        }\n        console.log('├──────────────────────────────────────┤');\n        console.log(`│  ${this.results.length} tasks in ${Date.now() - this.start}ms`);\n        console.log('└──────────────────────────────────────┘');\n    }\n}\n\nconst sleep = ms => new Promise(r => setTimeout(r, ms));\nconst sched = new TaskScheduler();\n\nsched.add('Parse config',     10, async () => { await sleep(20); return { keys: 12 }; });\nsched.add('Validate schema',   9, async () => { await sleep(15); return { valid: true }; });\nsched.add('Transform data',    8, async () => {\n    const data = Array.from({length: 1000}, (_, i) => i * i);\n    await sleep(25);\n    return { rows: data.length, sum: data.reduce((a,b) => a+b, 0) };\n});\nsched.add('Generate report',   5, async () => { await sleep(10); return { pages: 3 }; });\nsched.add('Send notification', 3, async () => { await sleep(5);  return { sent: true }; });\n\nsched.run();"
+    },
+    {
+      "engine_letter": "c",
+      "language": "typescript",
+      "label": "TypeScript — State Machine",
+      "code": "// ━━━ VPyD TypeScript Engine ━━━\n// Finite state machine with typed transitions\n\ntype State = 'idle' | 'loading' | 'processing' | 'success' | 'error';\ntype Event = 'start' | 'data_ready' | 'complete' | 'fail' | 'reset';\n\ninterface Transition {\n    from: State; event: Event; to: State; action?: string;\n}\n\nconst transitions: Transition[] = [\n    { from: 'idle',       event: 'start',      to: 'loading',    action: 'connect' },\n    { from: 'loading',    event: 'data_ready',  to: 'processing', action: 'parse' },\n    { from: 'processing', event: 'complete',    to: 'success',    action: 'save' },\n    { from: 'processing', event: 'fail',        to: 'error',      action: 'log' },\n    { from: 'loading',    event: 'fail',        to: 'error',      action: 'log' },\n    { from: 'error',      event: 'reset',       to: 'idle',       action: 'cleanup' },\n    { from: 'success',    event: 'reset',       to: 'idle',       action: 'cleanup' },\n];\n\nclass StateMachine {\n    private current: State = 'idle';\n    private log: string[] = [];\n\n    fire(event: Event): boolean {\n        const t = transitions.find(tr => tr.from === this.current && tr.event === event);\n        if (!t) { console.log(`  ✗ Invalid: ${this.current} + ${event}`); return false; }\n        this.log.push(`${this.current} -[${event}]-> ${t.to}`);\n        console.log(`  ${this.current} ──[${event}]──▶ ${t.to}${t.action ? ` (${t.action})` : ''}`);\n        this.current = t.to;\n        return true;\n    }\n    state(): State { return this.current; }\n}\n\nconsole.log('┌────────────────────────────────────────┐');\nconsole.log('│  VPyD TypeScript State Machine         │');\nconsole.log('├────────────────────────────────────────┤');\n\nconst sm = new StateMachine();\nconsole.log('\\n  ── Happy Path ──');\nsm.fire('start'); sm.fire('data_ready'); sm.fire('complete'); sm.fire('reset');\nconsole.log('\\n  ── Error Path ──');\nsm.fire('start'); sm.fire('fail'); sm.fire('reset');\nconsole.log('\\n  ── Invalid ──');\nsm.fire('complete');\nconsole.log(`\\n  Final: ${sm.state()}`);\nconsole.log('└────────────────────────────────────────┘');"
+    },
+    {
+      "engine_letter": "e",
+      "language": "java",
+      "label": "Java — Word Frequency",
+      "code": "// ━━━ VPyD Java Engine ━━━\n// Word frequency analysis with streams\n\nimport java.util.*;\nimport java.util.stream.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        String text = \"the quick brown fox jumps over the lazy dog \" +\n            \"the fox was quick and the dog was lazy \" +\n            \"a quick fox and a lazy dog make for an interesting chase \" +\n            \"the dog chased the fox through the quick brown meadow\";\n\n        Map<String, Long> freq = Arrays.stream(text.split(\"\\\\s+\"))\n            .map(String::toLowerCase)\n            .collect(Collectors.groupingBy(w -> w, Collectors.counting()));\n\n        System.out.println(\"╔═══════════════════════════════════════╗\");\n        System.out.println(\"║  VPyD Java — Word Frequency           ║\");\n        System.out.println(\"╠═══════════════════════════════════════╣\");\n\n        freq.entrySet().stream()\n            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())\n            .limit(10)\n            .forEach(e -> {\n                String bar = \"█\".repeat((int)(long)e.getValue());\n                System.out.printf(\"║  %-10s %2d │ %s%n\", e.getKey(), e.getValue(), bar);\n            });\n\n        long unique = freq.size();\n        long total = freq.values().stream().mapToLong(Long::longValue).sum();\n        System.out.println(\"╠═══════════════════════════════════════╣\");\n        System.out.printf(\"║  Words: %d  │  Unique: %d%n\", total, unique);\n        System.out.println(\"╚═══════════════════════════════════════╝\");\n    }\n}"
+    },
+    {
+      "engine_letter": "i",
+      "language": "go",
+      "label": "Go — Concurrent Primes",
+      "code": "// ━━━ VPyD Go Engine ━━━\n// Concurrent prime sieve with goroutines\n\npackage main\n\nimport (\n\t\"fmt\"\n\t\"math\"\n\t\"sync\"\n\t\"time\"\n)\n\nfunc sieve(lo, hi int, primes []int, out chan<- []int, wg *sync.WaitGroup) {\n\tdefer wg.Done()\n\tcomp := make([]bool, hi-lo)\n\tfor _, p := range primes {\n\t\tstart := ((lo + p - 1) / p) * p\n\t\tif start < p*p { start = p * p }\n\t\tfor j := start; j < hi; j += p { comp[j-lo] = true }\n\t}\n\tvar seg []int\n\tfor i := 0; i < hi-lo; i++ {\n\t\tif !comp[i] && (lo+i) >= 2 { seg = append(seg, lo+i) }\n\t}\n\tout <- seg\n}\n\nfunc main() {\n\tfmt.Println(\"┌──────────────────────────────────────────┐\")\n\tfmt.Println(\"│  VPyD Go — Concurrent Prime Sieve        │\")\n\tfmt.Println(\"├──────────────────────────────────────────┤\")\n\n\tconst limit = 100_000\n\tt0 := time.Now()\n\n\tsqrt := int(math.Sqrt(float64(limit))) + 1\n\tisc := make([]bool, sqrt)\n\tvar small []int\n\tfor i := 2; i < sqrt; i++ {\n\t\tif !isc[i] {\n\t\t\tsmall = append(small, i)\n\t\t\tfor j := i * i; j < sqrt; j += i { isc[j] = true }\n\t\t}\n\t}\n\n\tconst seg = 10_000\n\tvar wg sync.WaitGroup\n\tch := make(chan []int, limit/seg+1)\n\tfor lo := sqrt; lo < limit; lo += seg {\n\t\thi := lo + seg\n\t\tif hi > limit { hi = limit }\n\t\twg.Add(1)\n\t\tgo sieve(lo, hi, small, ch, &wg)\n\t}\n\tgo func() { wg.Wait(); close(ch) }()\n\n\tall := append([]int{}, small...)\n\tfor s := range ch { all = append(all, s...) }\n\n\telapsed := time.Since(t0)\n\tfmt.Printf(\"│  Primes < %d: %d\\n\", limit, len(all))\n\tfmt.Printf(\"│  Time: %v\\n\", elapsed)\n\tfmt.Printf(\"│  Last 5: %v\\n\", all[len(all)-5:])\n\tfmt.Println(\"└──────────────────────────────────────────┘\")\n}"
+    },
+    {
+      "engine_letter": "k",
+      "language": "csharp",
+      "label": "C# — LINQ Analytics",
+      "code": "// ━━━ VPyD C# Engine ━━━\n// LINQ analytics with pattern matching\n\nusing System;\nusing System.Linq;\nusing System.Collections.Generic;\n\nclass Program\n{\n    record Transaction(string Id, string Category, double Amount, DateTime Date, string Status);\n\n    static void Main()\n    {\n        var rng = new Random(42);\n        var cats = new[] { \"Electronics\", \"Books\", \"Clothing\", \"Food\", \"Services\" };\n        var stats = new[] { \"completed\", \"completed\", \"completed\", \"pending\", \"refunded\" };\n\n        var txns = Enumerable.Range(1, 200).Select(i => new Transaction(\n            $\"TXN-{i:D4}\", cats[rng.Next(cats.Length)],\n            Math.Round(rng.NextDouble() * 500 + 5, 2),\n            DateTime.Now.AddDays(-rng.Next(90)),\n            stats[rng.Next(stats.Length)]\n        )).ToList();\n\n        Console.WriteLine(\"╔═══════════════════════════════════════════╗\");\n        Console.WriteLine(\"║   VPyD C# — LINQ Analytics Engine        ║\");\n        Console.WriteLine(\"╠═══════════════════════════════════════════╣\");\n\n        var byCat = txns.Where(t => t.Status == \"completed\")\n            .GroupBy(t => t.Category)\n            .Select(g => new { Cat = g.Key, N = g.Count(), Sum = g.Sum(t => t.Amount), Avg = g.Average(t => t.Amount) })\n            .OrderByDescending(x => x.Sum);\n\n        foreach (var c in byCat)\n            Console.WriteLine($\"║  {c.Cat,-12} | {c.N,3} txns | ${c.Sum,8:F2} | avg ${c.Avg,6:F2}\");\n\n        Console.WriteLine(\"╠═══════════════════════════════════════════╣\");\n\n        foreach (var g in txns.GroupBy(t => t.Status))\n        {\n            string icon = g.Key switch { \"completed\" => \"done\", \"pending\" => \"wait\", \"refunded\" => \"back\", _ => \"?\" };\n            Console.WriteLine($\"║  [{icon,-4}] {g.Key,-10} | {g.Count(),3} | ${g.Sum(t => t.Amount),9:F2}\");\n        }\n\n        var rev = txns.Where(t => t.Status == \"completed\").Sum(t => t.Amount);\n        Console.WriteLine(\"╠═══════════════════════════════════════════╣\");\n        Console.WriteLine($\"║  Revenue: ${rev:F2}  |  Transactions: {txns.Count}\");\n        Console.WriteLine(\"╚═══════════════════════════════════════════╝\");\n    }\n}"
+    },
+    {
+      "engine_letter": "n",
+      "language": "bash",
+      "label": "Bash — System Profiler",
+      "code": "#!/bin/bash\n# ━━━ VPyD Bash/Shell Engine ━━━\n# System profiler — works on bash, PowerShell (auto-translated), and cmd\n\necho '┌───────────────────────────────────────┐'\necho '│  VPyD Shell — System Profiler          │'\necho '├───────────────────────────────────────┤'\necho \"│  Hostname: $(hostname)\"\necho \"│  Date:     $(date)\"\necho \"│  User:     $USER\"\necho '├───────────────────────────────────────┤'\necho '│  Benchmark:'\nSUM=0\nfor i in $(seq 1 1000); do SUM=$((SUM + i)); done\necho \"│    sum(1..1000) = $SUM\"\necho '└───────────────────────────────────────┘'"
+    }
+  ]
+}
