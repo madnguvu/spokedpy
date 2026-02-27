@@ -13,11 +13,11 @@ Full 40+ Pages of details here:  https://github.com/madnguvu/spokedpy/blob/main/
 
 SpokedPy is a visual programming platform that treats source code as a **translatable, executable, auditable data structure**. Its three-pillar architecture — the UIR for language neutrality, the Session Ledger for event sourcing, and the Node Registry for register-file execution — represents a fundamentally new approach to how developers interact with code.
 
-The system is not a prototype. It is 73,000+ lines of tested, modular, production-oriented software with a clear path to enterprise deployment, academic publication, and commercial viability.
+The system is not a prototype. It is 81,000+ lines of tested, modular, production-oriented software with a clear path to enterprise deployment, academic publication, and commercial viability.
 
 ---
 
-*SpokedPy — Code is data. Data is visual. Visual is executable.*
+*SpokedPy — includes PolyENGINE.*
 
 Download Zip file.  Extract.  Use Pip for installing dependencies.  From terminal, working directory web_interface --- use cmd:  python app.py  <enter> follow screen for instructions on navigating to interface via web browser, i.e. http://localhost:5002.   Up and running in about 1 minute.  
 
@@ -209,6 +209,7 @@ I enjoyed making this.  I hope you can find something interesting to do with it.
 
 Enjoy,
 MattD
+
 
 
 
